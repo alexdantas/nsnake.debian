@@ -1,0 +1,32 @@
+Description: Applied hardening flags to build process.
+Author: Alexandre Dantas <alex.dantas92@gmail.com>
+Last-Update: 2013-04-23--- a/Makefile
++++ b/Makefile
+@@ -57,9 +57,11 @@
+ CC			= gcc
+ EXE			= nsnake
+ CDEBUG		=
+-CFLAGS		= $(CDEBUG) -Wall -Wextra -O2
++CFLAGS	        = $(CDEBUG) -Wall -Wextra -O2 $(shell dpkg-buildflags --get CFLAGS)
++CPPFLAGS       = $(shell dpkg-buildflags --get CPPFLAGS)
++LDFLAGS        = $(shell dpkg-buildflags --get LDFLAGS)
+ LIBS		= -lncurses
+-INCLUDESDIR =
++INCLUDESDIR     =
+ LIBSDIR		=
+ OBJ			= $(LOBJ)/fruit.o	   \
+ 			  $(LOBJ)/main.o	   \
+@@ -116,11 +118,11 @@
+ 
+ $(EXE): $(OBJ)
+ 	# Linking...
+-	$(MUTE)$(CC) $(OBJ) -o $(LBIN)/$(EXE) $(LIBSDIR) $(LIBS)
++	$(MUTE)$(CC) $(OBJ) -o $(LBIN)/$(EXE) $(LIBSDIR) $(LIBS) $(LDFLAGS)
+ 
+ $(LOBJ)/%.o: $(LSRC)/%.c
+ 	# Compiling $<...
+-	$(MUTE)$(CC) $(CFLAGS) $< -c -o $@ $(DEFINES) $(INCLUDESDIR)
++	$(MUTE)$(CC) $(CPPFLAGS) $(CFLAGS) $< -c -o $@ $(DEFINES) $(INCLUDESDIR)
+ 
+ dist: clean $(DISTDIR).tar.gz
+ 
