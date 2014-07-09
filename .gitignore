@@ -1,0 +1,39 @@
+# .gitignore taken from Autotools.gitignore at
+# https://github.com/github/gitignore/
+
+# http://www.gnu.org/software/automake
+
+Makefile.in
+
+# http://www.gnu.org/software/autoconf
+
+/autom4te.cache
+/aclocal.m4
+/compile
+/configure
+/depcomp
+/install-sh
+/missing
+/stamp-h1
+
+# Local changes
+
+# More files generated from ./configure
+/config.status
+/config.log
+/src/defaults.h
+/config.h
+/src/.deps
+
+*.o
+Makefile
+
+# Final executable
+src/zatacka
+
+# Debian-generated directory structure
+/debian/zatacka
+*.debhelper.log
+
+# Any Emacs-generated files
+*~
