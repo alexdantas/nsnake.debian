@@ -5,8 +5,8 @@ Maintainer: Alexandre Dantas <alex.dantas92@gmail.com>
 Build-Depends: debhelper (>= 9), libncurses5-dev
 Standards-Version: 3.9.4
 Homepage: http://www.alexdantas.net/projects/nsnake/
-Vcs-Git: git://github.com/alexdantas/nSnake.git
-Vcs-Browser: https://github.com/alexdantas/nSnake
+Vcs-Git: git://github.com/alexdantas/nsnake.debian.git
+Vcs-Browser: https://github.com/alexdantas/nsnake.debian
 
 Package: nsnake
 Architecture: any
