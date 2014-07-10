@@ -1,3 +1,11 @@
+nsnake (1.5-2) unstable; urgency=low
+
+  * Added desktop and menu files, plus icons (Closes: #737978)
+  * Fixed end-of-line error on hardening patch file (Closes: #753241)
+  * Updated VCS links on debian/control
+
+ -- Alexandre Dantas <alex.dantas92@gmail.com>  Wed, 09 Jul 2014 23:30:23 -0400
+
 nsnake (1.5-1) unstable; urgency=low
 
   * Initial release (Closes: #706048)
