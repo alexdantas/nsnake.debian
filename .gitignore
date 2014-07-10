@@ -37,3 +37,7 @@ src/zatacka
 
 # Any Emacs-generated files
 *~
+
+# Root file where the executable gets
+# spit out
+/bin
