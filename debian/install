@@ -1,0 +1,5 @@
+debian/nsnake16.xpm usr/share/pixmaps
+debian/nsnake32.xpm usr/share/pixmaps
+debian/nsnake16.png usr/share/icons/hicolor/16x16/apps
+debian/nsnake32.png usr/share/icons/hicolor/32x32/apps
+debian/nsnake.desktop usr/share/applications

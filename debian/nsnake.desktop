@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=nsnake
+GenericName=Classic snake game on the terminal
+Exec=/usr/games/nsnake
+Terminal=true
+Icon=nsnake
+Categories=Game;ActionGame;
+Keywords=snake;ncurses;textual;terminal;
