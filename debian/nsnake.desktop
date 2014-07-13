@@ -1,8 +1,9 @@
 [Desktop Entry]
-Version=1.0
 Type=Application
+Version=1.0
 Name=nsnake
 GenericName=Classic snake game on the terminal
+GenericName[pt_BR]=Bom e velho jogo da cobra no terminal
 Exec=nsnake
 Terminal=true
 Icon=nsnake
