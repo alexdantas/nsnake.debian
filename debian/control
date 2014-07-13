@@ -3,7 +3,7 @@ Section: games
 Priority: optional
 Maintainer: Alexandre Dantas <alex.dantas92@gmail.com>
 Build-Depends: debhelper (>= 9), libncurses5-dev
-Standards-Version: 3.9.4
+Standards-Version: 3.9.5
 Homepage: http://www.alexdantas.net/projects/nsnake/
 Vcs-Git: git://github.com/alexdantas/nsnake.debian.git -b master
 Vcs-Browser: https://github.com/alexdantas/nsnake.debian
