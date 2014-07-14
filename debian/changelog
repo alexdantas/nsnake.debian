@@ -1,5 +1,6 @@
 nsnake (1.5-2) unstable; urgency=low
 
+  * Bumped standards version to 3.9.5
   * Added desktop and menu files, plus icons (Closes: #737978)
   * Fixed end-of-line error on hardening patch file (Closes: #753241)
   * Updated VCS links on debian/control
