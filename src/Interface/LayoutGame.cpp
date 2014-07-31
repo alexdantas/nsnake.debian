@@ -23,6 +23,11 @@ void LayoutGame::windowsInit()
 	Layout::windowsInit();
 	this->main->setTitle("nsnake " VERSION);
 
+	if (this->game->currentScore->level.empty())
+		this->main->setTitle("Arcade Mode", Window::TOP_RIGHT);
+	else
+		this->main->setTitle("Level " + this->game->board->getMetadata("name"), Window::TOP_RIGHT);
+
 	// Leftmost window
 	this->gamewin = new Window(this->main,
 	                           WINDOW_FILL,
@@ -41,7 +46,7 @@ void LayoutGame::windowsInit()
 	                         this->main->getW() / 4,
 	                         this->main->getH() / 2 - 1, //center
 	                         this->main->getW() / 2,
-	                         6);
+	                         7);
 
 	if (Globals::Screen::show_borders)
 	{
@@ -132,14 +137,16 @@ void LayoutGame::draw(Menu* menu)
 
 	this->info->print("Hi-Score", 0, 0, hilite);
 	this->info->print("Score",    this->info->getW()/3, 0, hilite);
-	this->info->print("Level",    this->info->getW()/3 * 2, 0, hilite);
+	this->info->print("Speed",    this->info->getW()/3 * 2, 0, hilite);
 
 	// Default color
 	wattrset(this->info->win, COLOR_PAIR(0));
 
-	mvwprintw(this->info->win, 0, 9, "%u", Globals::Game::highScore.points);
-	mvwprintw(this->info->win, 0, this->info->getW()/3 + 6, "%u", this->game->score->points);
-	mvwprintw(this->info->win, 0, this->info->getW()/3 * 2 + 6, "%d", this->game->score->level);
+	if (this->game->scores->highScore)
+		mvwprintw(this->info->win, 0, 9, "%u", this->game->scores->highScore->points);
+
+	mvwprintw(this->info->win, 0, this->info->getW()/3 + 6, "%u", this->game->currentScore->points);
+	mvwprintw(this->info->win, 0, this->info->getW()/3 * 2 + 6, "%d", this->game->currentScore->speed);
 
 	// 	// Timer - how much time has passed since game start
 	// 	this->rightmost->print("Timer", 2, 10, hilite);

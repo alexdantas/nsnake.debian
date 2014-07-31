@@ -2,9 +2,11 @@
 #define GLOBALS_H_DEFINED
 
 #include <Interface/Colors.hpp>
-#include <Game/Score.hpp>
 
 #include <string>
+
+// Avoiding cyclic #includes
+struct ScoreEntry;
 
 /// All global settings to the game.
 ///
@@ -38,8 +40,16 @@ namespace Globals
 #define MINOR 1
 #define PATCH 2
 
-	/// Game version (format MMP - Major Minor Patch)
-	extern int version[3];
+	/// Game version (format MMP - Major Minor Patch).
+	///
+	/// On the Makefile we define a constant VERSION which is
+	/// a string like "2.0.8".
+	/// It contains the current game version on MAJOR.MINOR.PATCH
+	/// format.
+	///
+	/// This variable contains the same info, but without the
+	/// dots.
+	extern char version[3];
 
 	namespace Config
 	{
@@ -52,7 +62,7 @@ namespace Globals
 
 		/// Main file where global settings reside.
 		///
-		/// It's `~/.local/share/nsnake/settings.yml`.
+		/// It's `~/.local/share/nsnake/settings.ini`.
 		extern std::string file;
 
 		/// Main file where the high scores are located.
@@ -73,7 +83,7 @@ namespace Globals
 
 	namespace Game
 	{
-		extern unsigned int starting_level;
+		extern unsigned int starting_speed;
 
 		extern int fruits_at_once;
 		extern bool random_walls;
@@ -89,18 +99,16 @@ namespace Globals
 
 		extern BoardSize board_size;
 
-		/// Maximum high score obtained for the current game.
-		///
-		/// There's different high scores for different
-		/// game settings.
-		///
-		/// Each time the user runs the game with a different
-		/// configuration of the tweaks above, a new high
-		/// score is generated.
-		///
-		/// It always starts with 0 and if the player
-		/// surpasses it, will be the new maximum.
-		extern Score highScore;
+		extern int board_scroll_delay;
+
+		extern bool board_scroll_up;
+		extern bool board_scroll_down;
+		extern bool board_scroll_left;
+		extern bool board_scroll_right;
+
+		/// Name of the level the game should load.
+		/// Also, name of the current level.
+		extern std::string current_level;
 	};
 
 	namespace Theme

@@ -3,15 +3,23 @@
 #include <Config/Globals.hpp>
 #include <Misc/Utils.hpp>
 
+int Board::small_width  = 40;
+int Board::small_height = 10;
+
+int Board::medium_width  = 55;
+int Board::medium_height = 14;
+
+int Board::large_width  = 78;
+int Board::large_height = 21;
+
 Board::Board(int width, int height, Style style):
-	style(style)
+	style(style),
+	start_x(BOARD_DEFAULT_PLAYER_X),
+	start_y(BOARD_DEFAULT_PLAYER_Y)
 {
 	this->board = new Array2D<bool>(width, height);
 
-	// Making it empty
-	for (size_t i = 0; i < this->board->width(); i++)
-		for (size_t j = 0; j < this->board->height(); j++)
-			this->board->set(i, j, false);
+	this->clear();
 }
 Board::~Board()
 {
@@ -55,9 +63,7 @@ void Board::draw(Window* win)
 	{
 		for (size_t j = 0; j < (this->board->height()); j++)
 		{
-			// Drawing the borders
-			if ((i == 0) || (i == this->board->width() - 1) ||
-			    (j == 0) || (j == this->board->height() - 1))
+			if (this->isBorder(i, j))
 			{
 				win->printChar(((this->style == Board::TELEPORT) ?
 				                teleport_appearance :
@@ -67,12 +73,9 @@ void Board::draw(Window* win)
 				               0);
 				continue;
 			}
-
-		    // Drawing the walls
-			if (this->board->at(i, j))
+			else if (this->isWall(i, j))
 				win->printChar(solid_appearance,
-				               i,
-				               j,
+				               i, j,
 				               0);
 		}
 	}
@@ -125,5 +128,117 @@ void Board::teleport(Player* player)
 	}
 
 	player->moveTo(newx, newy);
+}
+void Board::clear()
+{
+	// Making it empty
+	for (size_t i = 0; i < this->board->width(); i++)
+		for (size_t j = 0; j < this->board->height(); j++)
+			this->board->set(i, j, false);
+}
+void Board::setBoard(std::vector<std::vector<bool> >& newBoard)
+{
+	// Making it empty
+	for (size_t i = 0; i < this->board->width(); i++)
+		for (size_t j = 0; j < this->board->height(); j++)
+			this->board->set(i, j, newBoard[j][i]);
+}
+
+int Board::getStartX()
+{
+	return this->start_x;
+}
+int Board::getStartY()
+{
+	return this->start_y;
+}
+
+void Board::setStartX(int x)
+{
+	this->start_x = x;
+}
+void Board::setStartY(int y)
+{
+	this->start_y = y;
+}
+
+void Board::setMetadata(std::string name, std::string value)
+{
+	this->metadata[name] = value;
+}
+std::string Board::getMetadata(std::string name)
+{
+	if (! this->hasMetadata(name))
+		return "";
+
+	return this->metadata[name];
+}
+bool Board::hasMetadata(std::string name)
+{
+	return (this->metadata.find(name) != this->metadata.end());
+}
+void Board::scrollLeft()
+{
+	// Going line by line from top to bottom
+	for (size_t j = 0; j < this->board->height() - 1; j++)
+	{
+		// Get first left element from this line
+		bool tmp = this->board->at(1, j);
+
+		// Shifting all elements one block left
+		for (size_t i = 0; i < (this->board->width() - 1); i++)
+			this->board->set(i, j, this->board->at(i + 1, j));
+
+		// Putting the first element on the last place
+		this->board->set(this->board->width() - 2, j, tmp);
+	}
+}
+void Board::scrollRight()
+{
+	// Going line by line from top to bottom
+	for (size_t j = 0; j < this->board->height() - 1; j++)
+	{
+		// Get first right element from this line
+		bool tmp = this->board->at(this->board->width() - 2, j);
+
+		// Shifting all elements one block right
+		for (size_t i = (this->board->width() - 1); i > 0; i--)
+			this->board->set(i, j, this->board->at(i - 1, j));
+
+		// Putting the first element on the last place
+		this->board->set(1, j, tmp);
+	}
+}
+void Board::scrollUp()
+{
+	// Going line by line from left to right
+	for (size_t j = 0; j < this->board->width() - 1; j++)
+	{
+		// Get first top element from this line
+		bool tmp = this->board->at(j, 1);
+
+		// Shifting all elements one block up
+		for (size_t i = 0; i < (this->board->height() - 1); i++)
+			this->board->set(j, i, this->board->at(j, i + 1));
+
+		// Putting the first element on the last place
+		this->board->set(j, this->board->height() - 2, tmp);
+	}
+}
+void Board::scrollDown()
+{
+	// Going line by line from left to right
+	for (size_t j = 0; j < this->board->width() - 1; j++)
+	{
+		// Get first bottom element from this line
+		bool tmp = this->board->at(j, this->board->height() - 2);
+
+		// Shifting all elements one block down
+		for (size_t i = this->board->height() - 2; i > 0; i--)
+			this->board->set(j, i, this->board->at(j, i - 1));
+
+		// Putting the first element on the last place
+		this->board->set(j, 1, tmp);
+	}
 }
 

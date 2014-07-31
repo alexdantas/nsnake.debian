@@ -2,6 +2,7 @@
 #define WINDOW_H_DEFINED
 
 #include <string>
+#include <vector>
 #include <ncurses.h>
 
 #include <Interface/Colors.hpp>
@@ -35,12 +36,16 @@ public:
 	/// @note It defaults to white text on black background.
 	void print(std::string str, int x, int y, ColorPair pair=0);
 
-	/// Shows text #str at #x #y on the window with color #pair.
-	/// The difference is that we respect newlines, showing
-	/// it up at the next line just below text above.
+	/// Shows multiple text lines #lines at #x #y on the window
+	/// with color #pair.
 	///
 	/// @note It also defaults to white text on black background.
-	void print_multiline(std::string str, int x, int y, ColorPair pair=0);
+	/// @note Use it together with `Utils::String::split`:
+	///
+	///     window.print(Utils::String::split("multiple\nlines", '\n'),
+	///                 x, y, color_pair);
+	///
+	void print(std::vector<std::string> lines, int x, int y, ColorPair pair=0);
 
 	/// Shows #c at #x #y with color #pair.
 	///
@@ -62,8 +67,17 @@ public:
 
 	void horizontalLine(int x, int y, int c, int width, ColorPair pair);
 
-	void setTitle(std::string title);
+	enum WindowTitlePosition
+	{
+		TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT
+	};
 
+	/// Sets a text that will appear at the top of the Window.
+	///
+	/// By default it's shown on top of the borders, with
+	/// a highlighted color tone.
+	///
+	void setTitle(std::string title, WindowTitlePosition position=Window::TOP_LEFT);
 
 	/// Ncurses' internal data structure.
 	/// IT'S PUBLIC BECAUSE SOMETIMES I NEED TO CALL DIRECT
@@ -81,7 +95,10 @@ protected:
 
 	BorderType borderType;
 
-	std::string title;
+	std::string topLeftTitle;
+	std::string topRightTitle;
+	std::string bottomLeftTitle;
+	std::string bottomRightTitle;
 };
 
 #endif //WINDOW_H_DEFINED

@@ -4,6 +4,7 @@
 #include <Interface/Dialog.hpp>
 #include <Interface/Ncurses.hpp>
 #include <Config/Globals.hpp>
+#include <Game/BoardParser.hpp>
 
 GameStateGame::GameStateGame():
 	game(NULL),
@@ -15,10 +16,27 @@ void GameStateGame::load(int stack)
 {
 	UNUSED(stack);
 
-	Score::loadFile();
-
-	this->game = new Game();
-	this->game->start();
+	try {
+		this->game = new Game();
+		this->game->start(Globals::Game::current_level);
+		this->game->scores->load();
+	}
+	catch (BoardParserException& e)
+	{
+		Dialog::show("Couldn't load the level! (Error: \"" + e.message + "\")", true);
+		this->willQuit = true;
+	}
+	catch (ScoreFileException& e)
+	{
+		// Show a non-intrusive dialog with why
+		// we couldn't open high score file
+		//e.message
+	}
+	catch (std::runtime_error& e)
+	{
+		// Some error happened during INI parsing...
+		// What should we do?
+	}
 }
 int GameStateGame::unload()
 {
@@ -40,13 +58,13 @@ GameState::StateCode GameStateGame::update()
 		// inside the update() function.
 		// I know I shouldn't render things here.
 		// Oh boy, this should be refactored away.
-		Score::saveFile();
+		this->game->scores->save();
 		Ncurses::delay_ms(500);
 
 		this->game->draw();
 
 		if (Dialog::askBool("Retry?", "Game Over", true))
-			this->game->start();
+			this->load(); // restart the game
 		else
 			return GameState::MAIN_MENU;
 	}
@@ -61,6 +79,7 @@ GameState::StateCode GameStateGame::update()
 }
 void GameStateGame::draw()
 {
-	this->game->draw();
+	if (! this->willQuit)
+		this->game->draw();
 }
 

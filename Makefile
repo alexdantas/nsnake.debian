@@ -38,22 +38,24 @@
 
 # General Info
 PACKAGE = nsnake
-VERSION = 2.0.8
+VERSION = 3.0.0
 DATE    = $(shell date "+%b%Y")
 
 # Install dirs
 PREFIX      = /usr
 EXEC_PREFIX = $(PREFIX)
 DATAROOTDIR = $(PREFIX)/share
-MANROOT     = $(DATAROOTDIR)/man
 BINDIR      = $(EXEC_PREFIX)/bin
-MANDIR      = $(MANROOT)/man$(MANNUMBER)
 
 # Misc stuff
 PNGDIR     = $(DATAROOTDIR)/icons/hicolor
 XPMDIR     = $(DATAROOTDIR)/pixmaps
 DESKTOPDIR = $(DATAROOTDIR)/applications
+LEVELDIR   = $(DATAROOTDIR)/games/nsnake/levels
 
+# Things for the man page
+MANROOT     = $(DATAROOTDIR)/man
+MANDIR      = $(MANROOT)/man$(MANNUMBER)
 MANNUMBER   = 6
 MANFILE     = $(PACKAGE).$(MANNUMBER)
 MANPAGE     = doc/man/$(MANFILE)
@@ -72,9 +74,10 @@ CXXFILES = $(shell find src -type f -name '*.cpp')
 OBJECTS  = $(CFILES:.c=.o) \
            $(CXXFILES:.cpp=.o)
 
-DEFINES = -DVERSION=\""$(VERSION)"\" \
-          -DPACKAGE=\""$(PACKAGE)"\" \
-          -DDATE=\""$(DATE)"\"
+DEFINES = -DVERSION=\""$(VERSION)"\"                  \
+          -DPACKAGE=\""$(PACKAGE)"\"                  \
+          -DDATE=\""$(DATE)"\"                        \
+          -DSYSTEM_LEVEL_DIR=\""$(LEVELDIR)"\"
 
 # commander stuff
 COMMANDERDIR = deps/commander
@@ -118,6 +121,9 @@ install: all
 	$(MUTE)install -pdm755 $(DESTDIR)$(MANDIR)
 	$(MUTE)install -pm644 $(MANFILE) $(DESTDIR)$(MANDIR)
 	$(MUTE)rm -f $(MANFILE)
+
+	$(MUTE)install -pdm755 $(DESTDIR)$(LEVELDIR)
+	$(MUTE)install -pm644 levels/* $(DESTDIR)$(LEVELDIR)
 
 	$(MUTE)install -pdm755 $(DESTDIR)$(PNGDIR)/16x16/apps/
 	$(MUTE)install -pm644 misc/nsnake16.png $(DESTDIR)$(PNGDIR)/16x16/apps/nsnake.png

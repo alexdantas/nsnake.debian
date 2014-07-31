@@ -4,6 +4,7 @@
 #include <Flow/GameState.hpp>
 #include <Interface/LayoutMainMenu.hpp>
 #include <Interface/Menu/Menu.hpp>
+#include <Interface/Menu/MenuAlphabetic.hpp>
 #include <Interface/WindowGameHelp.hpp>
 
 /// The Main Menu.
@@ -18,6 +19,10 @@ public:
 
     void load(int stack=0);
 
+	/// Gets called when we're leaving this menu.
+	///
+	/// It saves all the menu settings
+	/// (for example, game speed, board size, and such)
     int unload();
 
 	GameState::StateCode update();
@@ -30,12 +35,14 @@ private:
 	/// The main menu.
 	Menu* menu;
 
-	/// Single Player submenu.
-	Menu* menuArcade;
-	bool menuArcadeActivated;
+	MenuAlphabetic* menuLevels;
+	bool menuLevelsActivated;
 
-	Menu* menuOptions;
- 	bool menuOptionsActivated;
+	Menu* menuGameSettings;
+	bool menuGameSettingsActivated;
+
+	Menu* menuGUIOptions;
+ 	bool menuGUIOptionsActivated;
 
 	Menu* menuControls;
 	bool menuControlsActivated;
@@ -44,11 +51,12 @@ private:
 
 	// easily create internal menus
 	void createMainMenu();
-	void createArcadeMenu();
-	void createOptionsMenu();
+	void createGameSettingsMenu();
+	void createLevelsMenu();
+	void createGUIOptionsMenu();
 	void createControlsMenu();
-	void saveSettingsMenuOptions();
-	void saveSettingsMenuArcade();
+	void saveSettingsMenuGUIOptions();
+	void saveSettingsMenuGameSettings();
 };
 
 #endif //GAMESTATEMAINMENU_H_DEFINED

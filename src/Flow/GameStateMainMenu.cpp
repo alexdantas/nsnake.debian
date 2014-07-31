@@ -4,33 +4,44 @@
 #include <Interface/Dialog.hpp>
 #include <Misc/Utils.hpp>
 #include <Config/Globals.hpp>
+#include <Game/BoardParser.hpp>
+#include <Game/ScoreFile.hpp>
 
 enum NamesToEasilyIdentifyTheMenuItemsInsteadOfRawNumbers
 {
 	// Main Menu
-	ARCADE,
+	ARCADE=1337,
+	LEVELS,
+	GAME_SETTINGS,
 	HELP,
-	OPTIONS,
+	GUI_OPTIONS,
 	CONTROLS,
 	QUIT_GAME,
 
-	// Single Player Submenu
-	START_GAME,
+	// Level select Submenu
+	RANDOM,
+
+	// Game Settings Submenu
 	GO_BACK,
-	STARTING_LEVEL,
+	STARTING_SPEED,
 	TELEPORT,
 	FRUITS,
 	RANDOM_WALLS,
 	BOARD_SIZE,
+	SCROLL_DELAY,
+	SCROLL_RIGHT,
+	SCROLL_LEFT,
+	SCROLL_UP,
+	SCROLL_DOWN,
+	ERASE_HIGH_SCORES,
 
-	// Options Submenu
+	// GUI Submenu
 	SHOW_BORDERS,
 	FANCY_BORDERS,
 	OUTER_BORDER,
 	USE_COLORS,
 	CENTER_HORIZONTAL,
 	CENTER_VERTICAL,
-	ERASE_HIGH_SCORES,
 
 	// Controls Submenu
 	CONTROLS_KEY_LEFT,
@@ -46,10 +57,12 @@ enum NamesToEasilyIdentifyTheMenuItemsInsteadOfRawNumbers
 GameStateMainMenu::GameStateMainMenu():
 	layout(NULL),
 	menu(NULL),
-	menuArcade(NULL),
-	menuArcadeActivated(false),
-	menuOptions(NULL),
-	menuOptionsActivated(false),
+	menuLevels(NULL),
+	menuLevelsActivated(false),
+	menuGameSettings(NULL),
+	menuGameSettingsActivated(false),
+	menuGUIOptions(NULL),
+	menuGUIOptionsActivated(false),
 	menuControls(NULL),
 	menuControlsActivated(false),
 	helpWindows(NULL)
@@ -62,8 +75,9 @@ void GameStateMainMenu::load(int stack)
 	this->layout = new LayoutMainMenu(80, 24, this);
 
 	createMainMenu();
-	createArcadeMenu();
-	createOptionsMenu();
+	createLevelsMenu();
+	createGameSettingsMenu();
+	createGUIOptionsMenu();
 	createControlsMenu();
 
 	this->helpWindows = new WindowGameHelp();
@@ -71,13 +85,14 @@ void GameStateMainMenu::load(int stack)
 
 int GameStateMainMenu::unload()
 {
-	saveSettingsMenuArcade();
-	saveSettingsMenuOptions();
+	saveSettingsMenuGameSettings();
+	saveSettingsMenuGUIOptions();
 
 	SAFE_DELETE(this->layout);
+	SAFE_DELETE(this->menuLevels);
+	SAFE_DELETE(this->menuGameSettings);
+	SAFE_DELETE(this->menuGUIOptions);
 	SAFE_DELETE(this->menuControls);
-	SAFE_DELETE(this->menuOptions);
-	SAFE_DELETE(this->menuArcade);
 	SAFE_DELETE(this->menu);
 
 	return 0;
@@ -88,56 +103,87 @@ GameState::StateCode GameStateMainMenu::update()
 	if (InputManager::isPressed("quit"))
 		return GameState::QUIT;
 
-	if (this->menuArcadeActivated)
+	if (this->menuLevelsActivated)
 	{
-		this->menuArcade->handleInput();
+		this->menuLevels->handleInput();
 
-		if (this->menuArcade->willQuit())
+		if (this->menuLevels->willQuit())
 		{
-			saveSettingsMenuArcade();
-
-			// And then exit based on the selected option.
-			switch (this->menuArcade->currentID())
+			switch (this->menuLevels->currentID())
 			{
-			case START_GAME:
+			case GO_BACK:
+				this->layout->menu->setTitle("Main Menu");
+				this->menuLevelsActivated = false;
+				break;
+
+			case RANDOM:
+			{
+				this->menuLevels->goRandom();
+
+				Globals::Game::current_level = this->menuLevels->current->label;
 				return GameState::GAME_START;
 				break;
+			}
 
-			case GO_BACK:
-				this->menuArcadeActivated = false;
+			default:
+				// Selected a level name!
+				Globals::Game::current_level = this->menuLevels->current->label;
+				return GameState::GAME_START;
 				break;
 			}
-			this->menuArcade->reset();
+			this->menuLevels->reset();
 		}
 	}
-	else if (this->menuOptionsActivated)
+	else if (this->menuGameSettingsActivated)
 	{
-		this->menuOptions->handleInput();
+		this->menuGameSettings->handleInput();
 
-		if (this->menuOptions->willQuit())
+		if (this->menuGameSettings->willQuit())
 		{
-			switch(this->menuOptions->currentID())
+			saveSettingsMenuGameSettings();
+
+			// And then exit based on the selected option.
+			switch (this->menuGameSettings->currentID())
 			{
-			case GO_BACK:
-				this->menuOptionsActivated = false;
-
-				// Redrawing the screen to refresh settings
-				saveSettingsMenuOptions();
-				this->layout->windowsExit();
-				this->layout->windowsInit();
-				break;
-
 			case ERASE_HIGH_SCORES:
+			{
 				bool answer = Dialog::askBool("Are you sure?");
 
 				if (answer)
 				{
-					// Clearing the High Scores file...
-					Utils::File::create(Globals::Config::scoresFile);
+					ScoreFile::eraseAll();
+					Dialog::show("All high scores erased!", true);
 				}
+			}
+				break;
+
+			case GO_BACK:
+				this->layout->menu->setTitle("Main Menu");
+				this->menuGameSettingsActivated = false;
 				break;
 			}
-			this->menuOptions->reset();
+			this->menuGameSettings->reset();
+		}
+	}
+	else if (this->menuGUIOptionsActivated)
+	{
+		this->menuGUIOptions->handleInput();
+
+		if (this->menuGUIOptions->willQuit())
+		{
+			switch(this->menuGUIOptions->currentID())
+			{
+			case GO_BACK:
+				this->layout->menu->setTitle("Main Menu");
+				this->menuGUIOptionsActivated = false;
+
+				// Redrawing the screen to refresh settings
+				saveSettingsMenuGUIOptions();
+				this->layout->windowsExit();
+				this->layout->windowsInit();
+				break;
+			}
+			this->menuGUIOptions->reset();
 		}
 	}
 	else if (this->menuControlsActivated)
@@ -151,6 +197,7 @@ GameState::StateCode GameStateMainMenu::update()
 			switch(this->menuControls->currentID())
 			{
 			case GO_BACK:
+				this->layout->menu->setTitle("Main Menu");
 				this->menuControlsActivated = false;
 				break;
 
@@ -211,19 +258,51 @@ GameState::StateCode GameStateMainMenu::update()
 			switch(this->menu->currentID())
 			{
 			case ARCADE:
-				this->menuArcadeActivated = true;
+				// Starting game on the default level
+				Globals::Game::current_level = "";
+				return GameState::GAME_START;
+				break;
+
+			case LEVELS:
+				// Before going to the Levels menu, we must check if
+				// the user has any levels on the level directory.
+				// If not, we should stay at the main menu.
+				if (BoardParser::listLevels().size() == 0)
+				{
+					Dialog::show("Sorry, it seems you have no levels.\n"
+					             "\n"
+					             "Please copy the default level files from\n"
+					             "`"  SYSTEM_LEVEL_DIR "/`\n"
+					             "to\n"
+					             "`" + BoardParser::directory + "`\n" +
+					             "\n"
+					             "You can also download more levels from the website:\n"
+					             "http://nsnake.alexdantas.net/", true);
+				}
+				else
+				{
+					this->layout->menu->setTitle("Level Select");
+					this->menuLevelsActivated = true;
+				}
+				break;
+
+			case GAME_SETTINGS:
+				this->layout->menu->setTitle("Game Settings");
+				this->menuGameSettingsActivated = true;
+				break;
+
+			case GUI_OPTIONS:
+				this->layout->menu->setTitle("GUI Options");
+				this->menuGUIOptionsActivated = true;
+				break;
+
+			case CONTROLS:
+				this->layout->menu->setTitle("Controls");
+				this->menuControlsActivated = true;
 				break;
 
 			case HELP:
 				this->helpWindows->run();
-				break;
-
-			case OPTIONS:
-				this->menuOptionsActivated = true;
-				break;
-
-			case CONTROLS:
-				this->menuControlsActivated = true;
 				break;
 
 			case QUIT_GAME:
@@ -240,11 +319,14 @@ GameState::StateCode GameStateMainMenu::update()
 
 void GameStateMainMenu::draw()
 {
-	if (this->menuArcadeActivated)
-		this->layout->draw(this->menuArcade);
+	if (this->menuLevelsActivated)
+		this->layout->draw(this->menuLevels);
 
-	else if (this->menuOptionsActivated)
-		this->layout->draw(this->menuOptions);
+	else if (this->menuGameSettingsActivated)
+		this->layout->draw(this->menuGameSettings);
+
+	else if (this->menuGUIOptionsActivated)
+		this->layout->draw(this->menuGUIOptions);
 
 	else if (this->menuControlsActivated)
 		this->layout->draw(this->menuControls);
@@ -267,55 +349,85 @@ void GameStateMainMenu::createMainMenu()
 
 	MenuItem* item;
 
-	item = new MenuItem("Arcade", ARCADE);
+	item = new MenuItem("Arcade Mode", ARCADE);
 	menu->add(item);
 
-	item = new MenuItem("Help", HELP);
+	item = new MenuItem("Level Select", LEVELS);
 	menu->add(item);
 
-	item = new MenuItem("Options", OPTIONS);
+	item = new MenuItem("Game Settings", GAME_SETTINGS);
+	menu->add(item);
+
+	item = new MenuItem("GUI Options", GUI_OPTIONS);
 	menu->add(item);
 
 	item = new MenuItem("Controls", CONTROLS);
 	menu->add(item);
 
+	item = new MenuItem("Help", HELP);
+	menu->add(item);
+
 	item = new MenuItem("Quit", QUIT_GAME);
 	menu->add(item);
 }
-void GameStateMainMenu::createArcadeMenu()
+void GameStateMainMenu::createLevelsMenu()
 {
-	SAFE_DELETE(this->menuArcade);
+	SAFE_DELETE(this->menuLevels);
 
-	this->menuArcade = new Menu(1,
-	                            1,
-	                            this->layout->menu->getW() - 2,
-	                            this->layout->menu->getH() - 2);
+	this->menuLevels = new MenuAlphabetic(1,
+	                                      1,
+	                                      this->layout->menu->getW() - 2,
+	                                      this->layout->menu->getH() - 2);
 
 	MenuItem* item;
 
-	item = new MenuItem("Start Game", START_GAME);
-	menuArcade->add(item);
+	std::vector<std::string> levels = BoardParser::listLevels();
 
 	item = new MenuItem("Back", GO_BACK);
-	menuArcade->add(item);
+	menuLevels->add(item);
 
-	menuArcade->addBlank();
+	item = new MenuItem("Random", RANDOM);
+	menuLevels->add(item);
+
+	menuLevels->addBlank();
+
+	for (size_t i = 0; i < levels.size(); i++)
+	{
+		item = new MenuItem(levels[i], i);
+		menuLevels->add(item);
+	}
+}
+void GameStateMainMenu::createGameSettingsMenu()
+{
+	SAFE_DELETE(this->menuGameSettings);
+
+	this->menuGameSettings = new Menu(1,
+	                                  1,
+	                                  this->layout->menu->getW() - 2,
+	                                  this->layout->menu->getH() - 2);
+
+	MenuItem* item;
+
+	item = new MenuItem("Back", GO_BACK);
+	menuGameSettings->add(item);
+
+	menuGameSettings->addBlank();
 
 	MenuItemNumberbox* number;
 
-	number = new MenuItemNumberbox("Starting Level", STARTING_LEVEL, 1, 10, Globals::Game::starting_level);
-	menuArcade->add(number);
+	number = new MenuItemNumberbox("Starting Speed", STARTING_SPEED, 1, 10, Globals::Game::starting_speed);
+	menuGameSettings->add(number);
 
 	number = new MenuItemNumberbox("Fruits", FRUITS, 1, 99, Globals::Game::fruits_at_once);
-	menuArcade->add(number);
+	menuGameSettings->add(number);
 
 	MenuItemCheckbox* check;
 
 	check = new MenuItemCheckbox("Teleport", TELEPORT, Globals::Game::teleport);
-	menuArcade->add(check);
+	menuGameSettings->add(check);
 
 	check = new MenuItemCheckbox("Random Walls", RANDOM_WALLS, Globals::Game::random_walls);
-	menuArcade->add(check);
+	menuGameSettings->add(check);
 
 	// The board size
 	std::vector<std::string> options;
@@ -339,13 +451,37 @@ void GameStateMainMenu::createArcadeMenu()
 	                            BOARD_SIZE,
 	                            options,
 	                            defaullt);
-	menuArcade->add(list);
-}
-void GameStateMainMenu::createOptionsMenu()
-{
-	SAFE_DELETE(this->menuOptions);
 
-	this->menuOptions = new Menu(1,
+	menuGameSettings->add(list);
+
+	menuGameSettings->addBlank();
+
+	number = new MenuItemNumberbox("Scroll Delay(ms)", SCROLL_DELAY, 100, 5000, Globals::Game::board_scroll_delay, 100);
+	menuGameSettings->add(number);
+
+	check = new MenuItemCheckbox("Scroll Up", SCROLL_UP, Globals::Game::board_scroll_up);
+	menuGameSettings->add(check);
+
+	check = new MenuItemCheckbox("Scroll Down", SCROLL_DOWN, Globals::Game::board_scroll_down);
+	menuGameSettings->add(check);
+
+	check = new MenuItemCheckbox("Scroll Left", SCROLL_LEFT, Globals::Game::board_scroll_left);
+	menuGameSettings->add(check);
+
+	check = new MenuItemCheckbox("Scroll Right", SCROLL_RIGHT, Globals::Game::board_scroll_right);
+	menuGameSettings->add(check);
+
+	menuGameSettings->addBlank();
+
+	item = new MenuItem("Erase High Scores",
+	                    ERASE_HIGH_SCORES);
+	menuGameSettings->add(item);
+}
+void GameStateMainMenu::createGUIOptionsMenu()
+{
+	SAFE_DELETE(this->menuGUIOptions);
+
+	this->menuGUIOptions = new Menu(1,
 	                             1,
 	                             this->layout->menu->getW() - 2,
 	                             this->layout->menu->getH() - 2);
@@ -353,42 +489,36 @@ void GameStateMainMenu::createOptionsMenu()
 	MenuItem* item;
 
 	item = new MenuItem("Back", GO_BACK);
-	menuOptions->add(item);
+	menuGUIOptions->add(item);
 
-	menuOptions->addBlank();
+	menuGUIOptions->addBlank();
 
 	MenuItemCheckbox* check;
 
 	check = new MenuItemCheckbox("Show Borders",
 	                             SHOW_BORDERS,
 	                             Globals::Screen::show_borders);
-	menuOptions->add(check);
+	menuGUIOptions->add(check);
 
 	check = new MenuItemCheckbox("Fancy Borders",
 	                             FANCY_BORDERS,
 	                             Globals::Screen::fancy_borders);
-	menuOptions->add(check);
+	menuGUIOptions->add(check);
 
 	check = new MenuItemCheckbox("Outer Border",
 	                             OUTER_BORDER,
 	                             Globals::Screen::outer_border);
-	menuOptions->add(check);
+	menuGUIOptions->add(check);
 
 	check = new MenuItemCheckbox("Center Horizontal",
 	                             CENTER_HORIZONTAL,
 	                             Globals::Screen::center_horizontally);
-	menuOptions->add(check);
+	menuGUIOptions->add(check);
 
 	check = new MenuItemCheckbox("Center Vertical",
 	                             CENTER_VERTICAL,
 	                             Globals::Screen::center_vertically);
-	menuOptions->add(check);
-
-	menuOptions->addBlank();
-
-	item = new MenuItem("Erase High Scores",
-	                    ERASE_HIGH_SCORES);
-	menuOptions->add(item);
+	menuGUIOptions->add(check);
 }
 void GameStateMainMenu::createControlsMenu()
 {
@@ -442,32 +572,32 @@ void GameStateMainMenu::createControlsMenu()
 	item = new MenuItem("Reset to Defaults", CONTROLS_DEFAULT);
 	menuControls->add(item);
 }
-void GameStateMainMenu::saveSettingsMenuOptions()
+void GameStateMainMenu::saveSettingsMenuGUIOptions()
 {
-	if (!this->menuOptions)
+	if (!this->menuGUIOptions)
 		return;
 
 	// User selected an option
 	// Let's get ids from menu items
-	Globals::Screen::show_borders        = this->menuOptions->getBool(SHOW_BORDERS);
-	Globals::Screen::fancy_borders       = this->menuOptions->getBool(FANCY_BORDERS);
-	Globals::Screen::outer_border        = this->menuOptions->getBool(OUTER_BORDER);
-	Globals::Screen::center_horizontally = this->menuOptions->getBool(CENTER_HORIZONTAL);
-	Globals::Screen::center_vertically   = this->menuOptions->getBool(CENTER_VERTICAL);
+	Globals::Screen::show_borders        = this->menuGUIOptions->getBool(SHOW_BORDERS);
+	Globals::Screen::fancy_borders       = this->menuGUIOptions->getBool(FANCY_BORDERS);
+	Globals::Screen::outer_border        = this->menuGUIOptions->getBool(OUTER_BORDER);
+	Globals::Screen::center_horizontally = this->menuGUIOptions->getBool(CENTER_HORIZONTAL);
+	Globals::Screen::center_vertically   = this->menuGUIOptions->getBool(CENTER_VERTICAL);
 }
-void GameStateMainMenu::saveSettingsMenuArcade()
+void GameStateMainMenu::saveSettingsMenuGameSettings()
 {
-	if (!this->menuArcade)
+	if (!this->menuGameSettings)
 		return;
 
 	// User selected an option
 	// Let's get ids from menu items
-	Globals::Game::starting_level = (unsigned int)this->menuArcade->getInt(STARTING_LEVEL);
-	Globals::Game::fruits_at_once = this->menuArcade->getInt(FRUITS);
-	Globals::Game::random_walls = this->menuArcade->getBool(RANDOM_WALLS);
-	Globals::Game::teleport = this->menuArcade->getBool(TELEPORT);
+	Globals::Game::starting_speed = (unsigned int)this->menuGameSettings->getInt(STARTING_SPEED);
+	Globals::Game::fruits_at_once = this->menuGameSettings->getInt(FRUITS);
+	Globals::Game::random_walls = this->menuGameSettings->getBool(RANDOM_WALLS);
+	Globals::Game::teleport = this->menuGameSettings->getBool(TELEPORT);
 
-	std::string tmp = this->menuArcade->getString(BOARD_SIZE);
+	std::string tmp = this->menuGameSettings->getString(BOARD_SIZE);
 	if (tmp == "Small")
 		Globals::Game::board_size = Globals::Game::SMALL;
 
@@ -476,6 +606,12 @@ void GameStateMainMenu::saveSettingsMenuArcade()
 
 	else
 		Globals::Game::board_size = Globals::Game::LARGE;
-}
 
+	Globals::Game::board_scroll_delay = this->menuGameSettings->getInt(SCROLL_DELAY);
+
+	Globals::Game::board_scroll_left  = this->menuGameSettings->getBool(SCROLL_LEFT);
+	Globals::Game::board_scroll_right = this->menuGameSettings->getBool(SCROLL_RIGHT);
+	Globals::Game::board_scroll_up    = this->menuGameSettings->getBool(SCROLL_UP);
+	Globals::Game::board_scroll_down  = this->menuGameSettings->getBool(SCROLL_DOWN);
+}
 

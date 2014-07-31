@@ -3,20 +3,21 @@
 #include <Misc/Utils.hpp>
 #include <Interface/LayoutGame.hpp>
 #include <Flow/InputManager.hpp>
+#include <Game/BoardParser.hpp>
 
 #include <stdlib.h>
 
 // Options of the Pause Menu
 enum NamesToEasilyIdentifyTheMenuItemsInsteadOfRawNumbers
 {
-	RESUME, QUIT_MENU, QUIT_GAME
+	RESUME, RESTART, QUIT_MENU, QUIT_GAME
 };
 
 Game::Game():
+	scores(NULL),
+	currentScore(NULL),
 	layout(NULL),
 	gameOver(false),
-	score(NULL),
-	highScore(NULL),
 	isPaused(false),
 	showPauseMenu(false),
 	showHelp(false),
@@ -28,17 +29,19 @@ Game::Game():
 Game::~Game()
 {
 	SAFE_DELETE(this->layout);
-	SAFE_DELETE(this->score);
+	SAFE_DELETE(this->scores);
+	SAFE_DELETE(this->currentScore);
 	SAFE_DELETE(this->pauseMenu);
 	SAFE_DELETE(this->player);
 	SAFE_DELETE(this->board);
 	SAFE_DELETE(this->fruits);
 }
-void Game::start()
+void Game::start(std::string levelName)
 {
 	// Cleaning things from the previous game (if any)
 	SAFE_DELETE(this->layout);
-	SAFE_DELETE(this->score);
+	SAFE_DELETE(this->scores);
+	SAFE_DELETE(this->currentScore);
 	SAFE_DELETE(this->pauseMenu);
 	SAFE_DELETE(this->player);
 	SAFE_DELETE(this->board);
@@ -47,13 +50,71 @@ void Game::start()
 	this->userAskedToQuit     = false;
 	this->userAskedToGoToMenu = false;
 	this->gameOver            = false;
+	this->isPaused            = false;
 
-	// The interface
+	this->scores = new ScoreFile(levelName);
+	// will load the scores on `GameStateGame`
+
+	this->currentScore = new ScoreEntry();
+	this->currentScore->level        = levelName;
+	this->currentScore->speed        = Globals::Game::starting_speed;
+	this->currentScore->fruits       = Globals::Game::fruits_at_once;
+	this->currentScore->random_walls = Globals::Game::random_walls;
+	this->currentScore->teleport     = Globals::Game::teleport;
+	this->currentScore->board_size   = Globals::Game::board_size;
+	this->currentScore->board_scroll_delay = Globals::Game::board_scroll_delay;
+	this->currentScore->board_scroll_left  = Globals::Game::board_scroll_left;
+	this->currentScore->board_scroll_right = Globals::Game::board_scroll_right;
+	this->currentScore->board_scroll_up    = Globals::Game::board_scroll_up;
+	this->currentScore->board_scroll_down  = Globals::Game::board_scroll_down;
+
+	// Defaults to large
+	int boardw = Board::large_width;
+	int boardh = Board::large_height;
+
+	if (Globals::Game::board_size == Globals::Game::SMALL)
+	{
+		boardw = Board::small_width;
+		boardh = Board::small_height;
+	}
+	else if (Globals::Game::board_size == Globals::Game::MEDIUM)
+	{
+		boardw = Board::medium_width;
+		boardh = Board::medium_height;
+	}
+
+	if (! levelName.empty())
+		this->board = BoardParser::load(levelName);
+
+	else
+	{
+		// If no level name is specified, silently
+		// fall back to a default one.
+
+		this->board = new Board(boardw,
+		                        boardh,
+		                        ((Globals::Game::teleport) ?
+		                         Board::TELEPORT :
+		                         Board::SOLID));
+	}
+
+	// the player!
+	this->player = new Player(this->board->getStartX(),
+	                          this->board->getStartY());
+
+	if (Globals::Game::random_walls)
+		this->board->randomlyFillExceptBy(this->player->getX(),
+		                                  this->player->getY());
+
+	// fruits beibeh
+	this->fruits = new FruitManager(Globals::Game::fruits_at_once);
+	this->fruits->update(this->player, this->board);
+
+	// Finally, the interface
+	//
+	// NOTE: It depends on the `currentScore` level name!
+	//       Do not initialize it before!
 	this->layout = new LayoutGame(this, 80, 24);
-
-	// Initializing the player and it's attributes
-	this->score = new Score();
-	this->score->level = Globals::Game::starting_level;
 
 	// Creating the menu and adding each item
 	this->pauseMenu = new Menu(1,
@@ -66,6 +127,9 @@ void Game::start()
 	item = new MenuItem("Resume", RESUME);
 	this->pauseMenu->add(item);
 
+	item = new MenuItem("Restart", RESTART);
+	this->pauseMenu->add(item);
+
 	this->pauseMenu->addBlank();
 
 	item = new MenuItem("Quit to Main Menu", QUIT_MENU);
@@ -74,40 +138,9 @@ void Game::start()
 	item = new MenuItem("Quit Game", QUIT_GAME);
 	this->pauseMenu->add(item);
 
-	// the player!
-	this->player = new Player(2, 2);
-
-	// Defaults to large
-	int boardw = 78;
-	int boardh = 21;
-
-	if (Globals::Game::board_size == Globals::Game::SMALL)
-	{
-		boardw = 40;
-		boardh = 10;
-	}
-	else if (Globals::Game::board_size == Globals::Game::MEDIUM)
-	{
-		boardw = 55;
-		boardh = 14;
-	}
-
-	this->board = new Board(boardw,
-	                        boardh,
-	                        ((Globals::Game::teleport) ?
-	                         Board::TELEPORT :
-	                         Board::SOLID));
-
-	if (Globals::Game::random_walls)
-		this->board->randomlyFillExceptBy(this->player->getX(),
-		                                  this->player->getY());
-
-	// fruits beibeh
-	this->fruits = new FruitManager(Globals::Game::fruits_at_once);
-	this->fruits->update(this->player, this->board);
-
 	// Starting timers
 	this->timerSnake.start();
+	this->timerBoard.start();
 	this->timer.start();
 }
 void Game::handleInput()
@@ -149,12 +182,14 @@ void Game::handleInput()
 			this->showHelp = false;
 			this->timer.unpause();
 			this->timerSnake.unpause();
+			this->timerBoard.unpause();
 		}
 		else
 		{
 			this->showHelp = true;
 			this->timer.pause();
 			this->timerSnake.pause();
+			this->timerBoard.pause();
 		}
 	}
 
@@ -200,6 +235,10 @@ void Game::update()
 				this->pause(false);
 				break;
 
+			case RESTART:
+				this->start(Globals::Game::current_level);
+				return;
+
 			case QUIT_MENU:
 				this->userAskedToGoToMenu = true;
 				break;
@@ -216,7 +255,7 @@ void Game::update()
 	// Forcing Snake to move if enough time has passed
 	// (time based on current level)
 	this->timerSnake.pause();
-	int delta = this->getDelay(this->score->level);
+	int delta = this->getDelay(this->currentScore->speed);
 
 	if (this->timerSnake.delta_ms() >= delta)
 	{
@@ -226,11 +265,9 @@ void Game::update()
 		{
 			this->gameOver = true;
 
-			if (this->score->points > Globals::Game::highScore.points)
-			{
-				Globals::Game::highScore.points = this->score->points;
-				Globals::Game::highScore.level = this->score->level;
-			}
+			// Check the return value and warns the player
+			// if he just beat the high score
+			this->scores->handle(this->currentScore);
 		}
 		else
 		{
@@ -244,7 +281,7 @@ void Game::update()
 				// Score formula is kinda random and
 				// scattered all over this file.
 				// TODO: Center it all on the Score class.
-				this->score->points += this->score->level * 2;
+				this->currentScore->points += this->currentScore->speed * 2;
 			}
 
 			this->fruits->update(this->player, this->board);
@@ -253,6 +290,23 @@ void Game::update()
 	}
 	else
 		this->timerSnake.unpause();
+
+	// Hey, can we scroll the Board?
+	// If yes, on which direction should we do it?
+	this->timerBoard.pause();
+	delta = Globals::Game::board_scroll_delay;
+
+	if (this->timerBoard.delta_ms() >= delta)
+	{
+		if (Globals::Game::board_scroll_up)    this->board->scrollUp();
+		if (Globals::Game::board_scroll_down)  this->board->scrollDown();
+		if (Globals::Game::board_scroll_left)  this->board->scrollLeft();
+		if (Globals::Game::board_scroll_right) this->board->scrollRight();
+
+		this->timerBoard.start();
+	}
+	else
+		this->timerBoard.unpause();
 }
 void Game::draw()
 {
@@ -270,12 +324,12 @@ bool Game::willReturnToMenu()
 {
 	return this->userAskedToGoToMenu;
 }
-int Game::getDelay(int level)
+int Game::getDelay(int speed)
 {
 	// returning delay in milliseconds
-	if (level < 1) return 800;
+	if (speed < 1) return 800;
 
-	switch (level)
+	switch (speed)
 	{
 	case 1:  return 800;
 	case 2:  return 600;
