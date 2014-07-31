@@ -9,7 +9,7 @@ Last-Update: 2014-07-31
  CDEBUG      = -O2
 -CXXFLAGS    = $(CDEBUG) -Wall -Wextra $(CFLAGS_PLATFORM)
 -LDFLAGS     = -lncurses -lyaml-cpp $(LDFLAGS_PLATFORM)
-+CXXFLAGS    = $(CDEBUG) -Wall -Wextra $(CFLAGS_PLATFORM) $(shell dpkg-buildflags --get CPPFLAGS)
++CXXFLAGS    = $(CDEBUG) -Wall -Wextra $(CFLAGS_PLATFORM) $(shell dpkg-buildflags --get CPPFLAGS) $(shell dpkg-buildflags --get CXXFLAGS) $(shell dpkg-buildflags --get CFLAGS)
 +LDFLAGS     = -lncurses -lyaml-cpp $(LDFLAGS_PLATFORM) $(shell dpkg-buildflags --get LDFLAGS)
  INCLUDESDIR = -I"src/" -I"deps/"
  LIBSDIR     =
@@ -19,7 +19,7 @@ Last-Update: 2014-07-31
  # commander stuff
  COMMANDERDIR = deps/commander
 -COMMANDER_CFLAGS = -O2 -Wall -Wextra $(CFLAGS_PLATFORM)
-+COMMANDER_CFLAGS = -O2 -Wall -Wextra $(CFLAGS_PLATFORM) $(shell dpkg-buildflags --get CFLAGS)
++COMMANDER_CFLAGS = -O2 -Wall -Wextra $(CFLAGS_PLATFORM) $(shell dpkg-buildflags --get CXXFLAGS) $(shell dpkg-buildflags --get CFLAGS)
  COMMANDER_OBJS = $(COMMANDERDIR)/commander.o
  
  # Distribution tarball
