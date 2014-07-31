@@ -1,33 +1,25 @@
 Description: Applied hardening flags to build process.
 Author: Alexandre Dantas <alex.dantas92@gmail.com>
-Last-Update: 2013-04-23
+Last-Update: 2014-07-31
 --- a/Makefile
 +++ b/Makefile
-@@ -57,9 +57,11 @@
- CC			= gcc
- EXE			= nsnake
- CDEBUG		=
--CFLAGS		= $(CDEBUG) -Wall -Wextra -O2
-+CFLAGS	        = $(CDEBUG) -Wall -Wextra -O2 $(shell dpkg-buildflags --get CFLAGS)
-+CPPFLAGS       = $(shell dpkg-buildflags --get CPPFLAGS)
-+LDFLAGS        = $(shell dpkg-buildflags --get LDFLAGS)
- LIBS		= -lncurses
--INCLUDESDIR =
-+INCLUDESDIR     =
- LIBSDIR		=
- OBJ			= $(LOBJ)/fruit.o	   \
- 			  $(LOBJ)/main.o	   \
-@@ -116,11 +118,11 @@
+@@ -63,8 +63,8 @@
+ # Build info
+ EXE         = $(PACKAGE)
+ CDEBUG      = -O2
+-CXXFLAGS    = $(CDEBUG) -Wall -Wextra $(CFLAGS_PLATFORM)
+-LDFLAGS     = -lncurses -lyaml-cpp $(LDFLAGS_PLATFORM)
++CXXFLAGS    = $(CDEBUG) -Wall -Wextra $(CFLAGS_PLATFORM) $(shell dpkg-buildflags --get CPPFLAGS)
++LDFLAGS     = -lncurses -lyaml-cpp $(LDFLAGS_PLATFORM) $(shell dpkg-buildflags --get LDFLAGS)
+ INCLUDESDIR = -I"src/" -I"deps/"
+ LIBSDIR     =
  
- $(EXE): $(OBJ)
- 	# Linking...
--	$(MUTE)$(CC) $(OBJ) -o $(LBIN)/$(EXE) $(LIBSDIR) $(LIBS)
-+	$(MUTE)$(CC) $(OBJ) -o $(LBIN)/$(EXE) $(LIBSDIR) $(LIBS) $(LDFLAGS)
+@@ -81,7 +81,7 @@
  
- $(LOBJ)/%.o: $(LSRC)/%.c
- 	# Compiling $<...
--	$(MUTE)$(CC) $(CFLAGS) $< -c -o $@ $(DEFINES) $(INCLUDESDIR)
-+	$(MUTE)$(CC) $(CPPFLAGS) $(CFLAGS) $< -c -o $@ $(DEFINES) $(INCLUDESDIR)
+ # commander stuff
+ COMMANDERDIR = deps/commander
+-COMMANDER_CFLAGS = -O2 -Wall -Wextra $(CFLAGS_PLATFORM)
++COMMANDER_CFLAGS = -O2 -Wall -Wextra $(CFLAGS_PLATFORM) $(shell dpkg-buildflags --get CFLAGS)
+ COMMANDER_OBJS = $(COMMANDERDIR)/commander.o
  
- dist: clean $(DISTDIR).tar.gz
- 
+ # Distribution tarball
