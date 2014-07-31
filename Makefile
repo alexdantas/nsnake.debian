@@ -1,88 +1,94 @@
-# nSnake Makefile (2011-2012)  Alexandre Dantas (kure) <alex.dantas92@gmail.com>
+# nsnake Makefile
+# (2013) Alexandre Dantas <eu@alexdantas.net>
 #
-# Makefile Commandlines:
-#  V	   Print all commands as they are called.
-#		   To turn on for the current make, add 'V=1' on the
-#		   commandline.
-#		   To turn on permanently, uncomment the line specified below
-#  DESTDIR Installs the package on a custom root directory (other than /)
-#		   For example 'DESTDIR=~/'.
-#  PREFIX  Installs the package on a custom directory (overwrites root)
-#  CFLAGS  Changes the C flags used on compilation
-#  CDEBUG  If you wish to build on debug mode, add 'CDEBUG=-g'
+# This is a rather complex Makefile, sorry about that.
+# It supports the following targets:
 #
-# Makefile Targets:
-#  all		  Compiles the package
-#  run		  Compiles and runs the program
-#  install	  Installs the package
-#  clean	  Removes the binary and the resulting object files
-#  uninstall  Uninstalls the package
-#  dist		  Creates the source code 'tarball' for distribution
-#  doc		  Generates the documentation with doxygen
-#  docclean	  Removes the documentation
+# make all        Builds the package
+# make run        Builds and runs the program
+# make install    Installs the package on your system
+# make uninstall  Uninstalls the package from your system
+# make clean      Cleans results of building process
+# make dist       Creates source code "tarball"
+# make doc        Generates the documentation with doxygen
+# make docclean   Removes the documentation
+#
+# Also, the following commandline arguments customize
+# default actions:
+#
+#  V        Verbose mode, off by default.
+#           To turn on for the current command,
+#           add `V=1` when calling `make`.
+#           To turn on permanently, uncomment the line
+#           specified below
+#  DESTDIR  Installs the package on a custom root directory
+#           (other than `/`). For example `DESTDIR=~/`.
+#  PREFIX   Installs the package on a custom directory
+#           (overwrites root)
+#  CFLAGS   Changes the C flags used on compilation
+#  CDEBUG   If you wish to build on debug mode, add 'CDEBUG=-g'
+#  CFLAGS_PLATFORM
+#           User specified compiler flags
+#  LDFLAGS_PLATFORM
+#           User specified linker flags
+#
 
 # Uncomment line below to tun on verbose mode permanently
-#V	= 1;
-
-SHELL	= /bin/sh
+#V = 1;
 
 # General Info
 PACKAGE = nsnake
-VERSION = 1.5
-DATE	= `date '+%b%Y'`
+VERSION = 3.0.0
+DATE    = $(shell date "+%b%Y")
 
-# Local source code information
-LBIN	= bin
-LOBJ	= obj
-LDOC	= doc
-LSRC	= src
-LFILES	= BUGS ChangeLog COPYING Doxyfile INSTALL Makefile README TODO
-
-# Install
-DESTDIR =
-PREFIX	= $(DESTDIR)/usr
-
+# Install dirs
+PREFIX      = /usr
 EXEC_PREFIX = $(PREFIX)
 DATAROOTDIR = $(PREFIX)/share
-MANROOT		= $(DATAROOTDIR)/man
+BINDIR      = $(EXEC_PREFIX)/bin
 
-BINDIR	  = $(EXEC_PREFIX)/games
-MANDIR	  = $(MANROOT)/man6
-MANNUMBER = 6
+# Misc stuff
+PNGDIR     = $(DATAROOTDIR)/icons/hicolor
+XPMDIR     = $(DATAROOTDIR)/pixmaps
+DESKTOPDIR = $(DATAROOTDIR)/applications
+LEVELDIR   = $(DATAROOTDIR)/games/nsnake/levels
 
-# Package score file name
-SCORE_FILE = high-scores.bin
+# Things for the man page
+MANROOT     = $(DATAROOTDIR)/man
+MANDIR      = $(MANROOT)/man$(MANNUMBER)
+MANNUMBER   = 6
+MANFILE     = $(PACKAGE).$(MANNUMBER)
+MANPAGE     = doc/man/$(MANFILE)
 
-# Compiling information
-CC			= gcc
-EXE			= nsnake
-CDEBUG		=
-CFLAGS	        = $(CDEBUG) -Wall -Wextra -O2 $(shell dpkg-buildflags --get CFLAGS)
-CPPFLAGS       = $(shell dpkg-buildflags --get CPPFLAGS)
-LDFLAGS        = $(shell dpkg-buildflags --get LDFLAGS)
-LIBS		= -lncurses
-INCLUDESDIR     =
-LIBSDIR		=
-OBJ			= $(LOBJ)/fruit.o	   \
-			  $(LOBJ)/main.o	   \
-			  $(LOBJ)/player.o	   \
-			  $(LOBJ)/nsnake.o	   \
-			  $(LOBJ)/engine.o	   \
-			  $(LOBJ)/hscores.o	   \
-			  $(LOBJ)/arguments.o
-MANFILE		= $(PACKAGE).$(MANNUMBER)
-MANPAGE		= $(LDOC)/man/$(MANFILE)
+# Build info
+EXE         = $(PACKAGE)
+CDEBUG      = -O2
+CXXFLAGS    = $(CDEBUG) -Wall -Wextra $(CFLAGS_PLATFORM)
+LDFLAGS     = -lncurses -lyaml-cpp $(LDFLAGS_PLATFORM)
+INCLUDESDIR = -I"src/" -I"deps/"
+LIBSDIR     =
 
-DEFINES	= -DVERSION=\""$(VERSION)"\"	   \
-		  -DDATE=\""$(DATE)"\"			   \
-		  -DSCORE_FILE=\""$(SCORE_FILE)"\"
+# All source files
+CFILES   = $(shell find src -type f -name '*.c')
+CXXFILES = $(shell find src -type f -name '*.cpp')
+OBJECTS  = $(CFILES:.c=.o) \
+           $(CXXFILES:.cpp=.o)
+
+DEFINES = -DVERSION=\""$(VERSION)"\"                  \
+          -DPACKAGE=\""$(PACKAGE)"\"                  \
+          -DDATE=\""$(DATE)"\"                        \
+          -DSYSTEM_LEVEL_DIR=\""$(LEVELDIR)"\"
+
+# commander stuff
+COMMANDERDIR = deps/commander
+COMMANDER_CFLAGS = -O2 -Wall -Wextra $(CFLAGS_PLATFORM)
+COMMANDER_OBJS = $(COMMANDERDIR)/commander.o
 
 # Distribution tarball
 TARNAME = $(PACKAGE)
 DISTDIR = $(TARNAME)-$(VERSION)
 
 # Verbose mode check
-
 ifdef V
 MUTE =
 VTAG = -v
@@ -96,62 +102,93 @@ else
 ROOT =
 endif
 
+ifdef DEBUG
+CDEBUG = -D_NSNAKE_DEBUG
+else
+CDEBUG =
+endif
+
 # Make targets
 all: dirs $(EXE)
 	# Build successful!
 
 install: all
 	# Installing...
-	$(MUTE)install -d --mode=755 $(BINDIR)
-	$(MUTE)install $(LBIN)/$(EXE) $(BINDIR)
-	$(MUTE)install -d $(MANDIR)
-	$(MUTE)install $(MANPAGE) $(MANDIR)
+	$(MUTE)install -pdm755 $(DESTDIR)$(BINDIR)
+	$(MUTE)install -pm755 bin/$(EXE) $(DESTDIR)$(BINDIR)
+
+	-$(MUTE)cat $(MANPAGE) | sed -e "s|DATE|$(DATE)|g" -e "s|VERSION|$(VERSION)|g" >$(MANFILE)
+	$(MUTE)install -pdm755 $(DESTDIR)$(MANDIR)
+	$(MUTE)install -pm644 $(MANFILE) $(DESTDIR)$(MANDIR)
+	$(MUTE)rm -f $(MANFILE)
+
+	$(MUTE)install -pdm755 $(DESTDIR)$(LEVELDIR)
+	$(MUTE)install -pm644 levels/* $(DESTDIR)$(LEVELDIR)
+
+	$(MUTE)install -pdm755 $(DESTDIR)$(PNGDIR)/16x16/apps/
+	$(MUTE)install -pm644 misc/nsnake16.png $(DESTDIR)$(PNGDIR)/16x16/apps/nsnake.png
+	$(MUTE)install -pdm755 $(DESTDIR)$(PNGDIR)/32x32/apps/
+	$(MUTE)install -pm644 misc/nsnake32.png $(DESTDIR)$(PNGDIR)/32x32/apps/nsnake.png
+	$(MUTE)install -pdm755 $(DESTDIR)$(XPMDIR)
+	$(MUTE)install -pm644 misc/nsnake32.xpm $(DESTDIR)$(XPMDIR)/nsnake.xpm
+	$(MUTE)install -pdm755 $(DESTDIR)$(DESKTOPDIR)
+	$(MUTE)install -pm644 misc/nsnake.desktop $(DESTDIR)$(DESKTOPDIR)
+
 	# $(PACKAGE) successfuly installed!
 
 uninstall:
 	# Uninstalling...
-	$(MUTE)rm -f $(BINDIR)/$(EXE)
+	$(MUTE)rm -f $(DESTDIR)$(BINDIR)/$(EXE)
+	$(MUTE)rm -f $(DESTDIR)$(MANDIR)/$(MANFILE)
+	$(MUTE)rm -f $(DESTDIR)$(PNGDIR)/16x16/apps/nsnake.png
+	$(MUTE)rm -f $(DESTDIR)$(PNGDIR)/32x32/apps/nsnake.png
+	$(MUTE)rm -f $(DESTDIR)$(XPMDIR)/nsnake.xpm
+	$(MUTE)rm -f $(DESTDIR)$(DESKTOPDIR)/nsnake.desktop
 
-purge: uninstall
-	# Purging configuration files...
-	$(MUTE)rm -f $(MANDIR)/$(MANFILE)
-
-$(EXE): $(OBJ)
+$(EXE): $(OBJECTS) $(COMMANDER_OBJS)
 	# Linking...
-	$(MUTE)$(CC) $(OBJ) -o $(LBIN)/$(EXE) $(LIBSDIR) $(LIBS) $(LDFLAGS)
+	$(MUTE)$(CXX) $(OBJECTS) $(COMMANDER_OBJS) -o bin/$(EXE) $(LIBSDIR) $(LDFLAGS)
 
-$(LOBJ)/%.o: $(LSRC)/%.c
+src/%.o: src/%.cpp
 	# Compiling $<...
-	$(MUTE)$(CC) $(CPPFLAGS) $(CFLAGS) $< -c -o $@ $(DEFINES) $(INCLUDESDIR)
+	$(MUTE)$(CXX) $(CXXFLAGS) $(CDEBUG) $< -c -o $@ $(DEFINES) $(INCLUDESDIR)
 
 dist: clean $(DISTDIR).tar.gz
 
+# This creates a tarball with all the files
+# versioned by GIT.
 $(DISTDIR).tar.gz: $(DISTDIR)
 	$(MUTE)tar czf $(DISTDIR).tar.gz $(DISTDIR)
 	$(MUTE)rm -rf $(DISTDIR)
 	$(MUTE)cp $(DISTDIR).tar.gz ..
 	$(MUTE)rm -f $(DISTDIR).tar.gz
+	# Created ../$(DISTDIR).tar.gz!
 
+# This copies all the source code files into a
+# subdirectory called $(DISTDIR).
+#
+# It uses `git ls-files` to create the directory
+# tree and copy everything to their respective
+# places.
+#
 $(DISTDIR):
-	$(MUTE)mkdir -p $(DISTDIR)/$(LSRC) $(DISTDIR)/$(LDOC)
-	$(MUTE)mkdir -p $(DISTDIR)/$(LBIN) $(DISTDIR)/$(LOBJ)
-	-$(MUTE)cp $(LFILES) -t $(DISTDIR)
-	-$(MUTE)cp -r $(LSRC)/* $(DISTDIR)/$(LSRC)
-	-$(MUTE)cp -r $(LBIN)/* $(DISTDIR)/$(LBIN)
-	-$(MUTE)cp -r $(LDOC)/* $(DISTDIR)/$(LDOC)
-
-dirs:
-	# Asserting source dirs...
-	-$(MUTE)mkdir -p $(LOBJ) $(LBIN)
+	# Compressing source code...
+	$(MUTE)mkdir -p $(DISTDIR)
+	-$(MUTE)git ls-files | xargs -L 1 dirname | sed -e 's|^|$(DISTDIR)/|' | xargs -L 1 mkdir -p
+	-$(MUTE)git ls-files | sed -e 's|\(.*\)|\0 $(DISTDIR)/\0|' | xargs -L 1 cp
+	-$(MUTE)rm -f $(DISTDIR)/.gitignore
 
 run: all
 	# Running...
-	$(MUTE)./$(LBIN)/$(EXE)
+	$(MUTE)./bin/$(EXE)
 
 clean:
 	# Cleaning files...
-	$(MUTE)rm $(VTAG) -f $(LOBJ)/*.o
-	$(MUTE)rm $(VTAG) -f $(LBIN)/*
+	$(MUTE)rm $(VTAG) -f $(OBJECTS) $(COMMANDER_OBJS)
+	$(MUTE)rm $(VTAG) -f bin/$(EXE)
+
+dirs:
+	$(MUTE)mkdir -p bin
 
 doc:
 	# Generating documentation...
@@ -159,8 +196,12 @@ doc:
 
 docclean:
 	# Removing documentation...
-	-$(MUTE)rm $(VTAG) -rf $(LDOC)/html
+	-$(MUTE)rm $(VTAG) -rf doc/html
 
-.PHONY: clean doc docclean uninstall
+.PHONY: clean dirs doc docclean uninstall
 
-#------------------------------------------------------------------------------
+# commander stuff
+
+$(COMMANDERDIR)/commander.o: $(COMMANDERDIR)/commander.c
+	# Compiling $<...
+	$(MUTE)$(CC) $(COMMANDER_CFLAGS) $< -c -o $@
