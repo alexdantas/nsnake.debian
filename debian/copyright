@@ -4,11 +4,11 @@ Upstream-Contact: Alexandre Dantas <alex.dantas92@gmail.com>
 Source: http://www.alexdantas.net/projects/nsnake/
 
 Files: *
-Copyright: 2011-2013 Alexandre Dantas <alex.dantas02@gmail.com>
+Copyright: 2011-2014 Alexandre Dantas <alex.dantas02@gmail.com>
 License: GPL-3.0+
 
 Files: debian/*
-Copyright: 2013 Alexandre Dantas <alex.dantas92@gmail.com>
+Copyright: 2014 Alexandre Dantas <alex.dantas92@gmail.com>
 License: GPL-3.0+
 
 License: GPL-3.0+
