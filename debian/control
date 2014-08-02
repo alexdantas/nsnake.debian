@@ -1,7 +1,7 @@
 Source: nsnake
 Section: games
 Priority: optional
-Maintainer: Alexandre Dantas <alex.dantas92@gmail.com>
+Maintainer: Alexandre Dantas <eu@alexdantas.net>
 Build-Depends: debhelper (>= 9), libncurses5-dev
 Standards-Version: 3.9.5
 Homepage: http://nsnake.alexdantas.net/
