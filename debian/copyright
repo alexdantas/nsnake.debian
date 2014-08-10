@@ -1,14 +1,14 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: nsnake
-Upstream-Contact: Alexandre Dantas <alex.dantas92@gmail.com>
+Upstream-Contact: Alexandre Dantas <eu@alexdantas.net>
 Source: http://www.alexdantas.net/projects/nsnake/
 
 Files: *
-Copyright: 2011-2014 Alexandre Dantas <alex.dantas02@gmail.com>
+Copyright: 2011-2014 Alexandre Dantas <eu@alexdantas.net>
 License: GPL-3.0+
 
 Files: debian/*
-Copyright: 2014 Alexandre Dantas <alex.dantas92@gmail.com>
+Copyright: 2014 Alexandre Dantas <eu@alexdantas.net>
 License: GPL-3.0+
 
 License: GPL-3.0+

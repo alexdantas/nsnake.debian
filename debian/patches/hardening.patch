@@ -1,5 +1,5 @@
 Description: Applied hardening flags to build process.
-Author: Alexandre Dantas <alex.dantas92@gmail.com>
+Author: Alexandre Dantas <eu@alexdantas.net>
 Last-Update: 2014-08-01
 --- a/Makefile
 +++ b/Makefile

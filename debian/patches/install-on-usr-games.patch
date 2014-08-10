@@ -1,5 +1,5 @@
 Description: Install binary on /usr/games instead of /usr/bin.
-Author: Alexandre Dantas <alex.dantas92@gmail.com>
+Author: Alexandre Dantas <eu@alexdantas.net>
 Last-Update: 2014-07-31
 --- a/Makefile
 +++ b/Makefile
