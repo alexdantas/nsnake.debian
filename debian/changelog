@@ -1,3 +1,13 @@
+nsnake (3.0.1-2) unstable; urgency=medium
+
+  * Updated maintainer mail address
+  * Cryptographic signature verification: upstream provides
+    a PGP signature to verify the tarball. Consequently:
+    - Added debian/upstream/signing-key.asc
+    - Updated debian/watch
+
+ -- Alexandre Dantas <eu@alexdantas.net>  Mon, 11 Aug 2014 15:48:05 -0400
+
 nsnake (3.0.1-1) unstable; urgency=low
 
   * New upstream version.
