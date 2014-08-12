@@ -1,6 +1,5 @@
 ?package(nsnake): needs="text" section="Games/Action"\
   hints="Terminal,Textual"\
   title="nsnake" command="/usr/games/nsnake"\
-  icon16x16="/usr/share/pixmaps/nsnake16.xpm"\
-  icon32x32="/usr/share/pixmaps/nsnake32.xpm"\
+  icon="/usr/share/pixmaps/nsnake.xpm"\
   longtitle="Classic snake game on the terminal"
