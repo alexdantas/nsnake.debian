@@ -5,6 +5,8 @@ nsnake (3.0.1-2) unstable; urgency=medium
     a PGP signature to verify the tarball. Consequently:
     - Added debian/upstream/signing-key.asc
     - Updated debian/watch
+  * Removed desktop file and PNG/XPM icons because they're
+    already provided by upstream
 
  -- Alexandre Dantas <eu@alexdantas.net>  Mon, 11 Aug 2014 15:48:05 -0400
 
